@@ -13,57 +13,57 @@
 
 #define SLEEP_TIME 50
 
-//TCP·şÎñÆ÷IP&&¶Ë¿Ú;
+//TCPæœåŠ¡å™¨IP&&ç«¯å£;
 #define SERVER_HOST "192.168.1.188"
 #define SERVER_PORT 11009//8006//
 
 /********************************************************************
-*	Copyright (R) Breeze 2013
-*
-*	×÷Õß:	    ÁõÇà·å;
-*	ÎÄ¼şÃû³Æ: 	TcpUtil.h;
-*   ´´½¨ÈÕÆÚ:	2013/11/11 12:09;
-*	
-*   ÀàÃû:       TCP¹¤¾ßÀà;
-*	ËµÃ÷:	   ÓÃÓÚ¹ÜÀíSOCKETÁ¬½Ó¼°Êı¾İÊÕ·¢;
-*********************************************************************/
+ *        Copyright (R) Breeze 2013
+ *
+ *        ä½œè€…:         åˆ˜é’å³°;
+ *        æ–‡ä»¶åç§°:         TcpUtil.h;
+ * åˆ›å»ºæ—¥æœŸ:        2013/11/11 12:09;
+ *
+ * ç±»å: TCPå·¥å…·ç±»;
+ *        è¯´æ˜:         ç”¨äºç®¡ç†SOCKETè¿æ¥åŠæ•°æ®æ”¶å‘;
+ *********************************************************************/
 class TcpUtil
 {
 public:
-	TcpUtil();
-	~TcpUtil();
-
-	static TcpUtil* shareTcpUtil();
-	void tcp_start();
-	void tcp_stop();
-
-	bool isRuning();
-
-	//»ñÈ¡½ÓÊÕÏûÏ¢¶ÓÁĞ;
-	MsgQueue* getRecvQueue();
-	MsgQueue* getSendQueue();
-
-	void pushSendQueue(std::string str,int msgType);//¼ÓÈë·¢ËÍ¶ÓÁĞ;
-	
+    TcpUtil();
+    ~TcpUtil();
+    
+    static TcpUtil* shareTcpUtil();
+    void tcp_start();
+    void tcp_stop();
+    
+    bool isRuning();
+    
+    //è·å–æ¥æ”¶æ¶ˆæ¯é˜Ÿåˆ—;
+    MsgQueue* getRecvQueue();
+    MsgQueue* getSendQueue();
+    
+    void pushSendQueue(std::string str,int msgType);//åŠ å…¥å‘é€é˜Ÿåˆ—;
+    
 protected:
-	void recvFunc(void);//½ÓÊÕÏûÏ¢·½·¨;
-	void sendFunc(void);//·¢ËÍÏûÏ¢·½·¨;
-	void tcpCheck(void);//TCP×´Ì¬¼ì²â·½·¨;
-	void pushRecvQueue(std::string str,int msgType);//¼ÓÈë½ÓÊÕ¶ÓÁĞ;
-	//´ò°üÏûÏ¢;
-	Message* constructMessage(const char* data,int commandId);
-	//½ÓÊÕÏûÏ¢¶ÓÁĞ;
-	MsgQueue* m_msgRecvQueue;
-	//·¢ËÍÏûÏ¢¶ÓÁĞ;
-	MsgQueue* m_msgSendQueue;
+    void recvFunc(void);//æ¥æ”¶æ¶ˆæ¯æ–¹æ³•;
+    void sendFunc(void);//å‘é€æ¶ˆæ¯æ–¹æ³•;
+    void tcpCheck(void);//TCPçŠ¶æ€æ£€æµ‹æ–¹æ³•;
+    void pushRecvQueue(std::string str,int msgType);//åŠ å…¥æ¥æ”¶é˜Ÿåˆ—;
+    //æ‰“åŒ…æ¶ˆæ¯;
+    Message* constructMessage(const char* data,int commandId);
+    //æ¥æ”¶æ¶ˆæ¯é˜Ÿåˆ—;
+    MsgQueue* m_msgRecvQueue;
+    //å‘é€æ¶ˆæ¯é˜Ÿåˆ—;
+    MsgQueue* m_msgSendQueue;
 private:
-	bool m_isRuning;//Ïß³ÌÔËĞĞ±êÖ¾;
-	ODSocket m_socket;
-
-	static pthread_mutex_t mutex; //»¥³âËø;
-	pthread_t pidRecv,pidSend;
-	static void* th_recv(void *r);//½ÓÊÕÊı¾İÏß³Ì;
-	static void* th_send(void *r);//·¢ËÍÊı¾İÏß³Ì;
+    bool m_isRuning;//çº¿ç¨‹è¿è¡Œæ ‡å¿—;
+    ODSocket m_socket;
+    
+    static pthread_mutex_t mutex; //äº’æ–¥é”;
+    pthread_t pidRecv,pidSend;
+    static void* th_recv(void *r);//æ¥æ”¶æ•°æ®çº¿ç¨‹;
+    static void* th_send(void *r);//å‘é€æ•°æ®çº¿ç¨‹;
 };
 
 #endif

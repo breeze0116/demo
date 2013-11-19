@@ -1,277 +1,277 @@
 #include "TcpUtil.h"
 #include "Util.h"
 /********************************************************************
-*	Copyright (R) Breeze 2013
-*
-*	×÷Õß:	    ÁõÇà·å;
-*	ÎÄ¼şÃû³Æ: 	TcpUtil.cpp;
-*   ´´½¨ÈÕÆÚ:	2013/11/11 17:17;
-*	
-*   ÀàÃû:        ;
-*	ËµÃ÷:	    ;
-*********************************************************************/
-pthread_mutex_t TcpUtil::mutex;//»¥³âËø;
+ *        Copyright (R) Breeze 2013
+ *
+ *        ä½œè€…:         åˆ˜é’å³°;
+ *        æ–‡ä»¶åç§°:         TcpUtil.cpp;
+ * åˆ›å»ºæ—¥æœŸ:        2013/11/11 17:17;
+ *
+ * ç±»å: ;
+ *        è¯´æ˜:         ;
+ *********************************************************************/
+pthread_mutex_t TcpUtil::mutex;//äº’æ–¥é”;
 
 static TcpUtil _sharedContext;
-TcpUtil* TcpUtil::shareTcpUtil() 
+TcpUtil* TcpUtil::shareTcpUtil()
 {
-	static bool s_bFirstUse = true;
-	if (s_bFirstUse) 
-	{
-		s_bFirstUse = false;
-	}
-	return &_sharedContext;
+    static bool s_bFirstUse = true;
+    if (s_bFirstUse)
+    {
+        s_bFirstUse = false;
+    }
+    return &_sharedContext;
 }
 
 TcpUtil::TcpUtil()
-	: m_isRuning( false )
-	, m_msgRecvQueue( NULL )
-	, m_msgSendQueue( NULL )
+: m_isRuning( false )
+, m_msgRecvQueue( NULL )
+, m_msgSendQueue( NULL )
 {
-	pthread_mutex_init(&mutex,NULL);//³õÊ¼»¯»¥³âËø;
-	m_msgRecvQueue = new MsgQueue();//MsgQueue::shareMsgQueue();
-	m_msgSendQueue = new MsgQueue();
+    pthread_mutex_init(&mutex,NULL);//åˆå§‹åŒ–äº’æ–¥é”;
+    m_msgRecvQueue = new MsgQueue();//MsgQueue::shareMsgQueue();
+    m_msgSendQueue = new MsgQueue();
 }
 
 TcpUtil::~TcpUtil()
 {
-	pthread_mutex_destroy(&mutex);
-	SAFE_DELETE_ELEMENT(m_msgRecvQueue);
-	SAFE_DELETE_ELEMENT(m_msgSendQueue);
+    pthread_mutex_destroy(&mutex);
+    SAFE_DELETE_ELEMENT(m_msgRecvQueue);
+    SAFE_DELETE_ELEMENT(m_msgSendQueue);
 }
 
 void TcpUtil::tcp_start()
 {
-	m_socket.Connect(SERVER_HOST, SERVER_PORT);
-	m_isRuning = true;
-	//³õÊ¼»¯²¢Æô¶¯ÊÕ·¢Ïß³Ì;
-	pthread_create(&pidRecv,NULL,th_recv,this);
-	pthread_create(&pidSend,NULL,th_send,this);
+    m_socket.Connect(SERVER_HOST, SERVER_PORT);
+    m_isRuning = true;
+    //åˆå§‹åŒ–å¹¶å¯åŠ¨æ”¶å‘çº¿ç¨‹;
+    pthread_create(&pidRecv,NULL,th_recv,this);
+    pthread_create(&pidSend,NULL,th_send,this);
 }
 
 void TcpUtil::tcp_stop()
 {
-	m_isRuning = false;
-	m_socket.Close();
+    m_isRuning = false;
+    m_socket.Close();
 }
 
 bool TcpUtil::isRuning()
 {
-	return m_isRuning;
+    return m_isRuning;
 }
 
-MsgQueue* TcpUtil::getRecvQueue() 
+MsgQueue* TcpUtil::getRecvQueue()
 {
-	return m_msgRecvQueue;
+    return m_msgRecvQueue;
 }
 
-MsgQueue* TcpUtil::getSendQueue() 
+MsgQueue* TcpUtil::getSendQueue()
 {
-	return m_msgSendQueue;
+    return m_msgSendQueue;
 }
 
-//ÏûÏ¢´ò°ü;
+//æ¶ˆæ¯æ‰“åŒ…;
 Message* TcpUtil::constructMessage(const char* data,int commandId)
 {
-	Message* msg = new Message();
-
-	msg->HEAD0=78;
-	msg->HEAD1=37;
-	msg->HEAD2=38;
-	msg->HEAD3=48;
-	msg->ProtoVersion=9;
-
-	int a=0;
-	msg->serverVersion[3]=(byte)(0xff&a);
-	msg->serverVersion[2]=(byte)((0xff00&a)>>8);
-	msg->serverVersion[1]=(byte)((0xff0000&a)>>16);
-	msg->serverVersion[0]=(byte)((0xff000000&a)>>24);
-
-	int b=strlen(data)+4;
-
-	msg->length[3]=(byte)(0xff&b);
-	msg->length[2]=(byte)((0xff00&b)>>8);
-	msg->length[1]=(byte)((0xff0000&b)>>16);
-	msg->length[0]=(byte)((0xff000000&b)>>24);
-
-	int c=commandId;
-	msg->commandId[3]=(byte)(0xff&c);
-	msg->commandId[2]=(byte)((0xff00&c)>>8);
-	msg->commandId[1]=(byte)((0xff0000&c)>>16);
-	msg->commandId[0]=(byte)((0xff000000&c)>>24);
-
-	msg->data = new char[msg->datalength()];
-	memset(msg->data,0,msg->datalength());
-	memcpy(msg->data+0,&msg->HEAD0,1);
-	memcpy(msg->data+1,&msg->HEAD1,1);
-	memcpy(msg->data+2,&msg->HEAD2,1);
-	memcpy(msg->data+3,&msg->HEAD3,1);
-	memcpy(msg->data+4,&msg->ProtoVersion,1);
-	memcpy(msg->data+5,&msg->serverVersion,4);
-	memcpy(msg->data+9,&msg->length,4);
-	memcpy(msg->data+13,&msg->commandId,4);
-	memcpy(msg->data+17,data,strlen(data));
-	return msg;
+    Message* msg = new Message();
+    
+    msg->HEAD0=78;
+    msg->HEAD1=37;
+    msg->HEAD2=38;
+    msg->HEAD3=48;
+    msg->ProtoVersion=9;
+    
+    int a=0;
+    msg->serverVersion[3]=(byte)(0xff&a);
+    msg->serverVersion[2]=(byte)((0xff00&a)>>8);
+    msg->serverVersion[1]=(byte)((0xff0000&a)>>16);
+    msg->serverVersion[0]=(byte)((0xff000000&a)>>24);
+    
+    int b=strlen(data)+4;
+    
+    msg->length[3]=(byte)(0xff&b);
+    msg->length[2]=(byte)((0xff00&b)>>8);
+    msg->length[1]=(byte)((0xff0000&b)>>16);
+    msg->length[0]=(byte)((0xff000000&b)>>24);
+    
+    int c=commandId;
+    msg->commandId[3]=(byte)(0xff&c);
+    msg->commandId[2]=(byte)((0xff00&c)>>8);
+    msg->commandId[1]=(byte)((0xff0000&c)>>16);
+    msg->commandId[0]=(byte)((0xff000000&c)>>24);
+    
+    msg->data = new char[msg->datalength()];
+    memset(msg->data,0,msg->datalength());
+    memcpy(msg->data+0,&msg->HEAD0,1);
+    memcpy(msg->data+1,&msg->HEAD1,1);
+    memcpy(msg->data+2,&msg->HEAD2,1);
+    memcpy(msg->data+3,&msg->HEAD3,1);
+    memcpy(msg->data+4,&msg->ProtoVersion,1);
+    memcpy(msg->data+5,&msg->serverVersion,4);
+    memcpy(msg->data+9,&msg->length,4);
+    memcpy(msg->data+13,&msg->commandId,4);
+    memcpy(msg->data+17,data,strlen(data));
+    return msg;
 }
 
 void TcpUtil::tcpCheck(void)
 {
-	if( !m_socket.Check() )
-	{
-		CCLog("Socket connection Error:%d",m_socket.GetError());
-		//m_socket = NULL;
-
-		bool status = false;
-		while(!status)
-		{
-			if (m_socket.Connect(SERVER_HOST,SERVER_PORT)) 
-			{
-				status = true;
-				CCLog("Reconnection Success");
-			}else
-			{
-				CCLog("Reconnection Failure");
-				return;
-			}
-		}
-	}
+    if( !m_socket.Check() )
+    {
+        CCLog("Socket connection Error:%d",m_socket.GetError());
+        //m_socket = NULL;
+        
+        bool status = false;
+        while(!status)
+        {
+            if (m_socket.Connect(SERVER_HOST,SERVER_PORT))
+            {
+                status = true;
+                CCLog("Reconnection Success");
+            }else
+            {
+                CCLog("Reconnection Failure");
+                return;
+            }
+        }
+    }
 }
 
 void TcpUtil::pushSendQueue(std::string str,int msgType)
 {
-	GameMSG msg;
-	msg.msgID = msgType;
-	msg.msg = str;
-	msg.tag = true;
-	if (m_msgSendQueue != NULL)
-	{
-		m_msgSendQueue->addAGameMessage(msg);
-		//CCLog("sendQueue size:%d",m_msgSendQueue->getSize());
-	}
+    GameMSG msg;
+    msg.msgID = msgType;
+    msg.msg = str;
+    msg.tag = true;
+    if (m_msgSendQueue != NULL)
+    {
+        m_msgSendQueue->addAGameMessage(msg);
+        //CCLog("sendQueue size:%d",m_msgSendQueue->getSize());
+    }
 }
 
 void TcpUtil::pushRecvQueue(std::string str,int msgType)
 {
-	GameMSG msg;
-	msg.msgID = msgType;
-	msg.msg = str;
-	msg.tag = true;
-	if (m_msgRecvQueue != NULL)
-	{
-		m_msgRecvQueue->addAGameMessage(msg);
-		//CCLog("recvQueue size:%d",m_msgRecvQueue->getSize());
-	}
+    GameMSG msg;
+    msg.msgID = msgType;
+    msg.msg = str;
+    msg.tag = true;
+    if (m_msgRecvQueue != NULL)
+    {
+        m_msgRecvQueue->addAGameMessage(msg);
+        //CCLog("recvQueue size:%d",m_msgRecvQueue->getSize());
+    }
 }
 
-//½ÓÊÕÊı¾İÂß¼­;
-void TcpUtil::recvFunc(void) 
+//æ¥æ”¶æ•°æ®é€»è¾‘;
+void TcpUtil::recvFunc(void)
 {
-	//ÍøÂç¼ì²â;
-	tcpCheck();
-
-	//È¡ÏûÏ¢Í·,Ç°Ãæ17¸ö×Ö½ÚÎªÏûÏ¢Í·;
-	char recvHeadBuf[17] = "\0";
-	int recvLen = m_socket.Recv(recvHeadBuf,sizeof(recvHeadBuf),0);
-	if (recvLen != 17 && recvLen != -1)
-	{
-		while (recvLen < 17)
-		{
-			int tLen = m_socket.Recv(recvHeadBuf+recvLen,sizeof(recvHeadBuf-recvLen),0);//Ò»Ö±¶Áµ½°ÑÏûÏ¢Í·½ÓÊÕÍê;
-			if (tLen != -1)
-			{
-				recvLen += tLen;
-			}
-		}
-	}
-
-	if (recvLen != -1)
-	{
-		//È¡ÏûÏ¢³¤¶È;
-		int msgLen, t;
-		memcpy(&t,recvHeadBuf+9,4);//´ÓµÚ9¸ö×Ö½Ú¿ªÊ¼µÄ4¸ö×Ö½ÚÎª³¤¶È;
-		msgLen = ntohl(t);
-		msgLen -= 4;//·şÎñÆ÷¶ÔÏûÏ¢³¤¶È×öÁË+4´¦Àí;
-
-		memcpy(&t,recvHeadBuf+13,4);//´ÓµÚ13¸ö×Ö½Ú¿ªÊ¼µÄ4¸ö×Ö½ÚÎªÏûÏ¢ÀàĞÍ;
-		int msgType = ntohl(t);
-
-		//½ÓÊÕÏûÏ¢Ìå;
-		int readSize = 0; //µ±Ç°¶ÁÈ¡ÏûÏ¢µÄ³¤¶È;
-		std::string rec_msg;
-		//Èç¹ûÏûÏ¢Ìå³¤¶È´óÓÚ0;
-		if( msgLen > 0 ) 
-		{
-			char* msgBody = new char[msgLen+1];
-			memset(msgBody,0,msgLen+1);
-			while ( readSize < msgLen )
-			{
-				int recvLen = m_socket.Recv(msgBody + readSize,msgLen - readSize,0);//Ò»Ö±¶Áµ½°ÑÏûÏ¢Ìå½ÓÊÕÍê;
-				if ( recvLen == msgLen )
-				{
-					rec_msg.assign((const char *)msgBody, msgLen);
-					readSize = recvLen;
-				}
-			}
-			SAFE_DELETE_ARRAY(msgBody);
-			//CCLog("RECV: %d,%s",msgLen,rec_msg.c_str());
-			pushRecvQueue(rec_msg,msgType);//½«ÏûÏ¢Ìí¼Óµ½¶ÓÁĞÖĞ;
-		}
-	}
+    //ç½‘ç»œæ£€æµ‹;
+    tcpCheck();
+    
+    //å–æ¶ˆæ¯å¤´,å‰é¢17ä¸ªå­—èŠ‚ä¸ºæ¶ˆæ¯å¤´;
+    char recvHeadBuf[17] = "\0";
+    int recvLen = m_socket.Recv(recvHeadBuf,sizeof(recvHeadBuf),0);
+    if (recvLen != 17 && recvLen != -1)
+    {
+        while (recvLen < 17)
+        {
+            int tLen = m_socket.Recv(recvHeadBuf+recvLen,sizeof(recvHeadBuf-recvLen),0);//ä¸€ç›´è¯»åˆ°æŠŠæ¶ˆæ¯å¤´æ¥æ”¶å®Œ;
+            if (tLen != -1)
+            {
+                recvLen += tLen;
+            }
+        }
+    }
+    
+    if (recvLen != -1)
+    {
+        //å–æ¶ˆæ¯é•¿åº¦;
+        int msgLen, t;
+        memcpy(&t,recvHeadBuf+9,4);//ä»ç¬¬9ä¸ªå­—èŠ‚å¼€å§‹çš„4ä¸ªå­—èŠ‚ä¸ºé•¿åº¦;
+        msgLen = ntohl(t);
+        msgLen -= 4;//æœåŠ¡å™¨å¯¹æ¶ˆæ¯é•¿åº¦åšäº†+4å¤„ç†;
+        
+        memcpy(&t,recvHeadBuf+13,4);//ä»ç¬¬13ä¸ªå­—èŠ‚å¼€å§‹çš„4ä¸ªå­—èŠ‚ä¸ºæ¶ˆæ¯ç±»å‹;
+        int msgType = ntohl(t);
+        
+        //æ¥æ”¶æ¶ˆæ¯ä½“;
+        int readSize = 0; //å½“å‰è¯»å–æ¶ˆæ¯çš„é•¿åº¦;
+        std::string rec_msg;
+        //å¦‚æœæ¶ˆæ¯ä½“é•¿åº¦å¤§äº0;
+        if( msgLen > 0 )
+        {
+            char* msgBody = new char[msgLen+1];
+            memset(msgBody,0,msgLen+1);
+            while ( readSize < msgLen )
+            {
+                int recvLen = m_socket.Recv(msgBody + readSize,msgLen - readSize,0);//ä¸€ç›´è¯»åˆ°æŠŠæ¶ˆæ¯ä½“æ¥æ”¶å®Œ;
+                if ( recvLen == msgLen )
+                {
+                    rec_msg.assign((const char *)msgBody, msgLen);
+                    readSize = recvLen;
+                }
+            }
+            SAFE_DELETE_ARRAY(msgBody);
+            //CCLog("RECV: %d,%s",msgLen,rec_msg.c_str());
+            pushRecvQueue(rec_msg,msgType);//å°†æ¶ˆæ¯æ·»åŠ åˆ°é˜Ÿåˆ—ä¸­;
+        }
+    }
 }
 
-//·¢ËÍÊı¾İÂß¼­;
+//å‘é€æ•°æ®é€»è¾‘;
 void TcpUtil::sendFunc(void)
 {
-	//ÍøÂç¼ì²â;
-	tcpCheck();
-	if (m_msgSendQueue != NULL && m_msgSendQueue->getSize() > 0)
-	{
-		GameMSG gameMsg = m_msgSendQueue->getAFirstGameMessage();
-		if (gameMsg.tag)
-		{
-			std::string data = gameMsg.msg;
-			Message *msg=this->constructMessage(data.c_str(), gameMsg.msgID);
-			int s = m_socket.Send((char*)msg->data,msg->datalength(),0);
-			SAFE_DELETE_ELEMENT(msg);
-		}
-	}
+    //ç½‘ç»œæ£€æµ‹;
+    tcpCheck();
+    if (m_msgSendQueue != NULL && m_msgSendQueue->getSize() > 0)
+    {
+        GameMSG gameMsg = m_msgSendQueue->getAFirstGameMessage();
+        if (gameMsg.tag)
+        {
+            std::string data = gameMsg.msg;
+            Message *msg=this->constructMessage(data.c_str(), gameMsg.msgID);
+            int s = m_socket.Send((char*)msg->data,msg->datalength(),0);
+            SAFE_DELETE_ELEMENT(msg);
+        }
+    }
 }
 
 
-//·¢ËÍÊı¾İÏß³Ì;
+//å‘é€æ•°æ®çº¿ç¨‹;
 void* TcpUtil::th_send(void *r)
 {
-	TcpUtil* tcpUtil = (TcpUtil*) r;
-	while( tcpUtil->m_isRuning )
-	{
-		pthread_mutex_lock(&mutex);
-		tcpUtil->sendFunc();
-		//CCLog("send thread________________________");
-		pthread_mutex_unlock(&mutex);
-#ifdef WIN32 
-		Sleep(SLEEP_TIME);
+    TcpUtil* tcpUtil = (TcpUtil*) r;
+    while( tcpUtil->m_isRuning )
+    {
+        pthread_mutex_lock(&mutex);
+        tcpUtil->sendFunc();
+        //CCLog("send thread________________________");
+        pthread_mutex_unlock(&mutex);
+#ifdef WIN32
+        Sleep(SLEEP_TIME);
 #else
-		sleep(SLEEP_TIME/1000.0f);
+        sleep(SLEEP_TIME/1000.0f);
 #endif
-	}
-	return NULL;
+    }
+    return NULL;
 }
 
-//½ÓÊÕÊı¾İÏß³Ì;
+//æ¥æ”¶æ•°æ®çº¿ç¨‹;
 void* TcpUtil::th_recv(void *r)
 {
-	TcpUtil* tcpUtil = (TcpUtil*) r;
-	while( tcpUtil->m_isRuning )
-	{
-		pthread_mutex_lock(&mutex);
-		//CCLog("recv thread........................");
-		tcpUtil->recvFunc();
-		pthread_mutex_unlock(&mutex);
-#ifdef WIN32 
-		Sleep(SLEEP_TIME);
+    TcpUtil* tcpUtil = (TcpUtil*) r;
+    while( tcpUtil->m_isRuning )
+    {
+        pthread_mutex_lock(&mutex);
+        //CCLog("recv thread........................");
+        tcpUtil->recvFunc();
+        pthread_mutex_unlock(&mutex);
+#ifdef WIN32
+        Sleep(SLEEP_TIME);
 #else
-		sleep(SLEEP_TIME/1000.0f);
+        sleep(SLEEP_TIME/1000.0f);
 #endif
-	}
-	return NULL;
+    }
+    return NULL;
 }
