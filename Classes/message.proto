@@ -1,0 +1,193 @@
+package bullfight;
+
+//登录请求(1001)
+message LoginRequest {
+	required string username = 1; //用户账号
+	required string passwd = 2; //用户密码
+}
+
+
+//用户信息消息
+message UserInfoMsg {
+	required int32 userID = 1; //用户ID
+	required int32 userLevel = 2; //用户等级
+	required string nickName = 3; //用户昵称
+	required int32 money = 4; //用户金币
+	required int32 diamonds = 5; //宝石数
+	required int32 VIP = 6; //VIP等级（该功能暂不做，后台服务给个缺省值，方便前端识别）
+	required int32 userFaceType = 7; //头像ID
+	required int32 userGlamours = 8; //魅力值（该功能暂不做，后台服务给个缺省值，方便前端识别）
+	required int32 userBankMoney = 9; //银行存款（该功能暂不做，后台服务给个缺省值，方便前端识别）
+	required int32 userBattleLevel = 10; //竞技场等级
+	required int32 currentExp = 11; //当前经验值
+	required int32 sex = 12; //性别（0：男, 1：女）
+}
+
+//登录返回消息
+message LoginMsg {
+	required int32 status = 1; //0：成功，其它：失败
+	optional UserInfoMsg userInfo = 2; //用户信息（可选，登录失败则不需要）
+}
+
+//房间信息获取请求(2001)
+message InitRoomRequest {
+	required int32 userID = 1; //用户ID
+}
+
+//房间信息
+message RoomInfoMsg {
+	required int32 roomID = 1; // 房间ID
+	required int32 roomPNumber = 2; //当前房间玩家人数
+	required int32 roomType = 3; //房间类型
+	required int32 roomLimitType = 4; // 房间限制类型
+	required string roomDescribtion = 5; // 房间限制描述
+}
+
+//房间列表
+message RoomListInfoMsg {
+	repeated RoomInfoMsg roomInfo = 1; //所有房间信息
+}
+
+//房间信息返回消息
+message InitRoomMsg {
+	required int32 status = 1; //0：成功，其它：失败
+	required int32 userID = 2; //用户ID
+	optional RoomListInfoMsg roomListInfo = 3; //房间基本信息（可选，登录失败则不需要）
+}
+
+//用户注册,游客身份登录(1002)
+message RegisterRequest {
+	required string username = 1;
+	required string passwd  = 2;
+	required string nickname = 3;
+}
+
+//用户注册返回登录成功消息
+message RegisterMsg {
+	required int32 status = 1; //0：成功，其它：失败
+    optional UserInfoMsg userInfo = 2;//用户信息（可选，注册失败则不需要）
+}
+
+//刷新请求
+message RefreshRequest {
+	required int32 userID = 1; //用户ID
+}
+
+//刷新返回消息
+message RefreshBackMsg {
+	required int32 status = 1; //0：成功，其它：失败
+	required int32 userID = 2; //用户ID
+	required UserInfoMsg userInfo = 3; //用户信息
+	optional RoomListInfoMsg roomListInfo = 4; //房间信息
+}
+
+//进入房间请求(2002)
+message EnterRoomRequest {
+	required int32 roomID = 1; //房间ID
+	required int32 userID = 2; //请求用户ID
+}
+
+//玩家信息
+message PlayerInfoMsg {
+	required int32 playerID = 1; //玩家ID
+	required int32 playerMoney = 2; //筹码值
+	required int32 playerDiamond = 3; //宝石数
+	required string playerNickName = 4; //昵称
+	required int32 playerLevel = 5; //等级
+	required int32 currentExp = 6; //当前经验值
+	required int32 battleLevel = 7; //竞技场
+	required int32 playerGlamour = 8; //魅力值
+	required int32 playerFaceType = 9; //头像ID
+	required int32 playerVIPLevel = 10; //VIP等级
+	optional bool hasFamily = 11 [default = false]; //是否有家族（公会）
+	optional string playerFamily = 12 [default = ""]; //公会名称
+}
+
+//牌组信息（由后台根据时钟PUSH前端玩家）
+message PokerMsg {
+	required int32 roomID = 1; //房间ID
+	repeated int32 pokerValue = 2; //牌组信息（25 个数值）
+}
+
+//下注结果（由后台根据时钟PUSH前端玩家）
+message RoomBetEndMsg {
+	required int32 roomID = 1; //房间ID
+	required int32 bankerWinMoney = 2; //庄家赢取筹码值
+	required int32 playerWinMoney = 3; //玩家赢取筹码总值
+	repeated int32 playerBetWinMoney = 4; //接收消息玩家赢取筹码值（分4组， 天，地，玄，黄）
+	optional bool bIsBanker = 5 [default = false]; //接收消息玩家是否是庄家
+}
+
+//申请庄家，提前下庄
+message BankerRequest {
+	required int32 roomID = 1; //房间ID
+	required int32 playerID = 2; //申请玩家ID
+}
+
+//房间庄家列表（申请庄家返回消息，同样可以群发给所有同房间玩家， 下庄时也需要此消息）
+message RoomBankerListMsg {
+	required int32 roomID = 1; // 房间ID
+	message Banker {
+		required int32 playerID = 1; //玩家ID
+		required int32 playerMoney = 2; //玩家筹码值
+		required string playerName = 3; //昵称
+		required bool isBanker = 4; //是否是庄家
+	}
+	repeated Banker bankerList = 2; //庄家列表
+}
+
+//房间返回消息
+message RoomStatusMsg {
+	required int32 roomID = 1; //房间ID
+	required int32 playerID = 2; //玩家ID
+	required bool enterValid = 3; //是否能进入房间
+	optional int32 currentStatus = 4 [default = 0]; //房间当前状态（0：空闲，1：下注， 2:发牌）
+	optional int32 currentTime = 5 [default = 0]; //房间状态时间
+	optional bool bHasBanker = 6 [default = false]; //房间内是否有庄家
+	optional PokerMsg pokerSetMsg = 7; //牌组信息（下注，或者发牌阶段需要）
+	optional RoomBetEndMsg endMsg = 8; //下注结果（下注，或者发牌阶段需要）
+	repeated PlayerInfoMsg playerList = 9; //所有玩家信息
+	optional RoomBankerListMsg bankerList = 10; //庄家列表信息
+	required int32 status = 11; //0：成功，其它：失败
+}
+
+//下注信息
+message RoomBetMsg {
+	required int32 roomID = 1; //房间ID
+	required int32 playerID = 2; //玩家ID
+	required int32 betMoney = 3; //下注筹码值
+	required int32 betID = 4; //下注桌面（4个中的一个：0,1,2,3）
+}
+
+//当前下注筹码总数(该消息在有人下注时，群发给所有在该房间的玩家)
+message RoomBetTotalMsg {
+	required int32 roomID = 1; //房间ID
+	optional int32 playerID = 2 [default = 0]; //玩家ID
+	optional bool isBetted = 3 [default = false]; //是否下注
+	optional bool isValid = 4 [default = false]; //下注是否有效
+	optional int32 betID = 5 [default = 0]; //下注桌面
+	optional int32 betMoney = 6 [default = 0]; //下注筹码值
+	repeated int32 totalBetMoney = 7; //下注桌面的所有筹码值
+}
+
+//房间时间确认请求
+message RoomStatusTimeCfgRequest {
+	required int32 roomID = 1; //房间ID
+	required int32 userID = 2; //玩家ID
+}
+
+//房间时间确认信息
+message RoomStatusTimeCfgMsg {
+	required int32 roomID = 1; //房间ID
+	required int32 currentStatus = 2; //房间当前状态（0：空闲，1：下注， 2:发牌）
+	required int32 currentTime = 3; //房间状态时间
+}
+
+//退出房间(如果玩家下注或者做庄了，需要扣除该局赢取或者输掉的筹码值)
+message ExitRoomMsg {
+	required int32 roomID = 1; //房间ID
+	required int32 playerID = 2; //玩家ID（用户）
+}
+
+
+
